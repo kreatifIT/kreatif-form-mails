@@ -1,0 +1,45 @@
+{
+  "name": "kreatif/statamic-forms",
+  "version": "0.0.1",
+  "description": "Statamic forms addon to share base templates and common functionalities among different projects.",
+  "type": "statamic-addon",
+  "keywords": [
+    "statamic",
+    "forms"
+  ],
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Kreatif\\StatamicForms\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Kreatif\\StatamicForms\\Tests\\": "tests"
+    }
+  },
+  "require": {
+    "statamic/cms": "^5.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^9.0"
+  },
+  "config": {
+    "allow-plugins": {
+      "pixelfear/composer-dist-plugin": true
+    }
+  },
+  "extra": {
+    "statamic": {
+      "name": "Forms",
+      "description": "Forms addon"
+    },
+    "laravel": {
+      "providers": [
+        "Kreatif\\StatamicForms\\ServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
