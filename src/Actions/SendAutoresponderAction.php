@@ -30,7 +30,7 @@ class SendAutoresponderAction extends BaseAction
         }
 
         $mailableClass = $this->getMailableClass();
-        Mail::to($config['to'])->send(
+        Mail::to($userEmail)->send(
             new $mailableClass($submission, $config)
         );
 

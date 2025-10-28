@@ -4,3 +4,11 @@ composer.lock
 .phpunit.result.cache
 grabber.sh
 dump.txt
+.idea
+.vscode
+.env
+.env.local
+
+# Laravel specific
+/storage/*.key
+/storage/app/public
