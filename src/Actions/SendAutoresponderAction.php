@@ -29,6 +29,15 @@ class SendAutoresponderAction extends BaseAction
             );
         }
 
+
+        // Validate email address (check for ASCII-only and valid format)
+        if (!$this->isValidEmail($userEmail)) {
+            return ActionResult::failure(
+                errors: ["Invalid email address format: {$userEmail}"],
+                message: 'Autoresponder failed: invalid email address'
+            );
+        }
+
         $mailableClass = $this->getMailableClass();
         Mail::to($userEmail)->send(
             new $mailableClass($submission, $config)

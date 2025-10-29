@@ -148,4 +148,19 @@ abstract class BaseAction implements FormActionInterface
         }
         return ucwords(str_replace(['-', '_'], ' ', $str));
     }
+
+    protected function isValidEmail(string $email): bool
+    {
+        if (!mb_check_encoding($email, 'ASCII')) {
+            return false;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+        if (preg_match('/[^\x00-\x7F]/', $email)) {
+            return false;
+        }
+        return true;
+    }
+
 }

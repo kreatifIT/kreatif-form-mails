@@ -18,7 +18,16 @@ class AutoresponderMailable extends BaseMailable
         $email = $this->statamicMailSubmission->get($emailField);
         $nameField = $this->mailConfig['name_field'] ?? null;
         if (!empty($nameField)) {
-            $name = $this->statamicMailSubmission->get($nameField) ?? null;
+            if (is_string($nameField)) {
+                $name = $this->statamicMailSubmission->get($nameField) ?? null;
+            } else if (is_array($nameField)) {
+                $mapped = array_map(function($field) {
+                    return $this->statamicMailSubmission->get($field) ?? null;
+                }, $nameField);
+                $name = trim(implode(' ', array_filter($mapped))) ?: null;
+            } else {
+                $name = null;
+            }
         } else {
             $firstname = $this->statamicMailSubmission->get('first_name') ?? $this->statamicMailSubmission->get('firstname') ?? null;
             $lastname = $this->statamicMailSubmission->get('last_name') ?? $this->statamicMailSubmission->get('lastname') ?? null;
@@ -31,7 +40,7 @@ class AutoresponderMailable extends BaseMailable
             }
         }
         $email = $this->parseRecipients($email);
-        $this->to($email, $name);
+        $this->to($email, $name??null);
         return $this;
     }
 
@@ -39,6 +48,28 @@ class AutoresponderMailable extends BaseMailable
     protected function addReplyTo(): self
     {
         // Autoresponder typically does not need a reply-to address
+        return $this;
+    }
+
+    protected function buildMailRecipients(): self
+    {
+        // Initialize all recipient arrays
+        $this->to = [];
+        $this->cc = [];
+        $this->bcc = [];
+        $this->from = [];
+        $this->replyTo = [];
+
+        // Only set from address for autoresponder
+        if ($from = $this->mailConfig['from'] ?? null) {
+            $recipients = $this->parseRecipients($from);
+            $this->from($recipients);
+        }
+
+        // Autoresponder should only go to the submitter
+        // Do NOT add CC or BCC etc to autoresponder emails
+        $this->addMailTo();
+
         return $this;
     }
 

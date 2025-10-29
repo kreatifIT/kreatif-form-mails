@@ -57,9 +57,13 @@ class FormProcessorService
 
         $areAllSuccessful = true;
         foreach ($results as $result) {
-            if (is_array($result) && isset($result['results'])) {
-                foreach ($result['results'] as $actionResult) {
-                    if (!$actionResult->isSuccess()) {
+            // $result can be either:
+            // 1. An array of ActionResults (keyed by action class name) when multiple email configs exist
+            // 2. A single ActionResult when no email configs exist
+            if (is_array($result)) {
+                // Iterate through each action result in the array
+                foreach ($result as $actionResult) {
+                    if ($actionResult instanceof ActionResult && !$actionResult->isSuccess()) {
                         $areAllSuccessful = false;
                         break 2;
                     }

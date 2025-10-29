@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Statamic\Facades\Antlers;
@@ -186,7 +187,7 @@ abstract class BaseMailable extends Mailable
                 return trim($this->handleAntlersParsing($value) ?? '');
             }, $recipientsToArr));
         } else {
-            dd($recipients);
+            Log::warning("Invalid recipients: {$recipients} or unhandle case.");
         }
         return (array) $recipients;
     }
@@ -230,10 +231,14 @@ abstract class BaseMailable extends Mailable
         $fields = $this->statamicMailSubmission->form()->blueprint()->fields()->all();
         $requestInFiles = request()->allFiles();
 
-        $actionFieldsToExclude = $this->mailConfig['exclude_fields'] ?? [];
+        // Separate exclude list for attachments (different from exclude_fields
+        // which is for email body content)
+        $excludeAttachments = $this->mailConfig['exclude_attachments'] ?? [];
         foreach ($fields as $field) {
             $handle = (string) $field->handle();
-            if (in_array($handle, $actionFieldsToExclude, true)) {
+
+            // Check if this field is in the exclude_attachments list
+            if (in_array($handle, $excludeAttachments, true)) {
                 continue;
             }
 
