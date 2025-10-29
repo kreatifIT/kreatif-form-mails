@@ -3,9 +3,12 @@
 namespace Kreatif\StatamicForms\Listeners;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\ValidationException;
 use Kreatif\StatamicForms\Services\FormProcessorService;
 use Statamic\Events\FormSubmitted;
 use Statamic\Events\SubmissionCreated;
+use Statamic\Facades\Site;
 
 class HandleFormSubmission
 {
@@ -23,6 +26,9 @@ class HandleFormSubmission
      */
     public function handle(FormSubmitted $event): ?bool
     {
+        $site = Site::findByUrl(URL::previous()) ?? Site::default();
+        $locale = $site->handle();
+        app()->setLocale($locale);
         $formHandle = $event->submission->form()->handle();
 
         // Check if this addon should handle emails for this form
@@ -35,10 +41,53 @@ class HandleFormSubmission
         /** @var \Statamic\Contracts\Forms\Submission|mixed $submission */
         $submission = $event->submission;
 
+        $processingResult = null;
         try {
-            $this->processor->process($submission, $originalEmailConfig);
+            $processingResult = $this->processor->process($submission, $originalEmailConfig);
+            // Check if processing was successful
+            if (isset($processingResult['success']) && !$processingResult['success']) {
+                $errorMessages = [];
+
+                // Collect error messages from failed actions
+                if (isset($processingResult['results'])) {
+                    foreach ($processingResult['results'] as $resultGroup) {
+                        if (is_array($resultGroup)) {
+                            // When multiple email configs exist, iterate through action results
+                            foreach ($resultGroup as $actionResult) {
+                                if ($actionResult instanceof \Kreatif\StatamicForms\Contracts\ActionResult && !$actionResult->isSuccess(
+                                    )) {
+                                    $errorMessages[] = $actionResult->getMessage();
+                                    if ($errors = $actionResult->getErrors()) {
+                                        $errorMessages = array_merge($errorMessages, $errors);
+                                    }
+                                }
+                            }
+                        } elseif ($resultGroup instanceof \Kreatif\StatamicForms\Contracts\ActionResult && !$resultGroup->isSuccess(
+                            )) {
+                            // Single action result
+                            $errorMessages[] = $resultGroup->getMessage();
+                            if ($errors = $resultGroup->getErrors()) {
+                                $errorMessages = array_merge($errorMessages, $errors);
+                            }
+                        }
+                    }
+                }
+
+                $errorMessage = implode('; ', array_filter($errorMessages)) ?: 'Form processing failed';
+
+                Log::error('Form processing failed: '.$errorMessage, [
+                    'form_handle' => $formHandle,
+                    'submission_id' => $submission->id(),
+                    'results' => $processingResult,
+                ]);
+                throw ValidationException::withMessages([
+                    'email' => $errorMessages,
+                ]);
+            }
+        } catch (ValidationException $e) {
+            throw $e; // Re-throw validation exceptions so Statamic can handle them
         } catch (\Exception $e) {
-            Log::error('Error processing form submission: ' . $e->getMessage(), [
+            Log::error('Error processing form submission: '.$e->getMessage(), [
                 'form_handle' => $formHandle,
                 'submission_id' => $submission->id(),
             ]);
@@ -48,7 +97,7 @@ class HandleFormSubmission
             try {
                 $submission->save();
             } catch (\Throwable $th) {
-                Log::error('Error saving form submission: ' . $th->getMessage(), [
+                Log::error('Error saving form submission: '.$th->getMessage(), [
                     'form_handle' => $formHandle,
                     'submission_id' => $submission->id(),
                 ]);
