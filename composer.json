@@ -1,6 +1,6 @@
 {
   "name": "kreatif/statamic-forms",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Statamic forms addon to share base templates and common functionalities among different projects.",
   "type": "statamic-addon",
   "keywords": [
