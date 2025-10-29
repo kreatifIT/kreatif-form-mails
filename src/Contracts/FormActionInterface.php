@@ -48,4 +48,13 @@ interface FormActionInterface
     public static function isPreviewable(): bool;
 
     public static function name(): string;
+
+    /**
+     * Get the configuration fields for this action.
+     * These fields will be shown in the CP when this action is selected.
+     * Return an array of Statamic field configurations.
+     */
+    public static function configFields(): array;
+
+    public static function parseConfigFieldValue(string $fieldName, string $value, ?array $emailConfig): mixed;
 }

@@ -42,6 +42,16 @@ return [
         'css' => 'vite:resources/css/site.css', // 'css:.cid{}, .cid2{}', or 'url:https://exampe.com/assets/sites.css', 'vite:resources/css/site.css'
     ],
 
+    'actions' => [
+        'simple' => [
+            AddToIubendaAction::class => [],
+        ],
+        'mailables' => [
+            SendAdminNotificationAction::class => [],
+            SendAutoresponderAction::class => []
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Iubenda API Configuration
@@ -59,7 +69,7 @@ return [
     |--------------------------------------------------------------------------
     | Form Handlers
     |--------------------------------------------------------------------------
-    | Define custom actions for each form handle.
+    | Define custom actions for each form handle, if not set in the form configuration itself
     | The key is the form's handle (e.g., 'contact', 'newsletter_signup').
     |
     | Available action configuration options:

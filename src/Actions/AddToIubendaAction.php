@@ -84,4 +84,19 @@ class AddToIubendaAction extends BaseAction
         return false;
     }
 
+    public static function configFields(): array
+    {
+        return [
+            // [
+            //     "handle" => "preferences",
+            //     "display" => __("kreatif-forms::forms.action_config.iubenda_preferences"),
+            //     "type" => "array",
+            //     "instructions" => __("kreatif-forms::forms.action_config.iubenda_preferences_instructions"),
+            //     "placeholder" => "newsletter: false",
+            //     "mode" => "keyed",
+            //     "width" => 100,
+            // ],
+        ];
+    }
+
 }

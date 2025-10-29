@@ -149,6 +149,32 @@ abstract class BaseAction implements FormActionInterface
         return ucwords(str_replace(['-', '_'], ' ', $str));
     }
 
+
+    public static function configFields(): array
+    {
+        return [];
+    }
+
+    public static function parseConfigFieldValue(string $fieldName, string $value, ?array $emailConfig): mixed
+    {
+        $fields = static::configFields();
+        if (!$fields || empty($fields)) {
+            return $value;
+        }
+
+        // exclude_fields
+        if($fieldName === 'exclude_fields' && is_string($value)) {
+            $findExclude = array_search('exclude_fields', array_column($fields, 'handle'));
+            if ($findExclude !== false) {
+                $items = array_map('trim', explode(',', $value));
+                return $items;
+            }
+        }
+        return $value;
+    }
+
+
+
     protected function isValidEmail(string $email): bool
     {
         if (!mb_check_encoding($email, 'ASCII')) {
@@ -162,5 +188,4 @@ abstract class BaseAction implements FormActionInterface
         }
         return true;
     }
-
 }

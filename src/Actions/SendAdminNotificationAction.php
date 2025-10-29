@@ -15,6 +15,10 @@ class SendAdminNotificationAction extends BaseAction
         return AdminNotificationMailable::class;
     }
 
+    public static function name(): string {
+        return __("kreatif-forms::forms.actions.send_admin_notification");
+    }
+
     protected function handle(Submission $submission, array $config): ActionResult
     {
         // Validate recipient email addresses
@@ -72,5 +76,29 @@ class SendAdminNotificationAction extends BaseAction
     public function getPriority(): int
     {
         return 30; // High priority - send notifications early
+    }
+
+    public static function configFields(): array
+    {
+        return [
+            [
+                "handle" => "subject",
+                "display" => __("kreatif-forms::forms.action_config.subject"),
+                "type" => "text",
+                "instructions" => __("kreatif-forms::forms.action_config.subject_instructions"),
+                "placeholder" => "translate:kreatif-forms::forms.new_submission_subject",
+                "default" => "translate:kreatif-forms::forms.new_submission_subject",
+                "width" => 50,
+            ],
+            [
+                "handle" => "exclude_fields",
+                "display" => __("kreatif-forms::forms.action_config.exclude_fields"),
+                "type" => "text",
+                "instructions" => __("kreatif-forms::forms.action_config.exclude_fields_instructions"),
+                "placeholder" => "privacy, consent",
+                "default" => "privacy, consent",
+                "width" => 50,
+            ],
+        ];
     }
 }

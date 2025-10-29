@@ -35,23 +35,23 @@ class FormProcessorService
         $addonConfig = config("kreatif-statamic-forms.handlers.{$formHandle}", []);
         $globalConfig = config('kreatif-statamic-forms.email', []);
 
-        if (empty($addonConfig['actions'])) {
-            Log::info("No addon actions configured for form: {$formHandle}");
-            return ['success' => true, 'message' => 'No actions to process'];
-        }
 
         if (empty($formEmailConfigs) && empty($globalConfig)) {
             Log::info("No email configuration found for form: {$formHandle}, running non-email actions only");
         }
 
-        $handlerBaseConfig = array_merge($globalConfig, Arr::except($addonConfig, ['actions']));
 
+        $handlerBaseConfig = array_merge($globalConfig, Arr::except($addonConfig, ['actions']));
         $results = [];
         if (!empty($formEmailConfigs)) {
-            foreach ($formEmailConfigs as $formEmailConfig) {
-                $results[$formEmailConfig['id']] = $this->executeActions($submission, $addonConfig['actions'], $handlerBaseConfig, $formEmailConfig);
+            foreach ($formEmailConfigs as $formEmailConfig) { // each email config of form
+                $filteredActions = $this->filterActionsForEmailConfig(
+                    $addonConfig['actions'] ?? [],
+                    $formEmailConfig
+                );
+                $results[$formEmailConfig['id']] = $this->executeActions($submission, $filteredActions, $handlerBaseConfig, $formEmailConfig);
             }
-        } else {
+        } else if (!empty($addonConfig['actions'])) {
             $results = $this->executeActions($submission, $addonConfig['actions'], $handlerBaseConfig, []);
         }
 
@@ -98,13 +98,6 @@ class FormProcessorService
         foreach ($sortedActions as $actionClass => $actionConfig) {
             if (!class_exists($actionClass)) {
                 Log::error("Action class {$actionClass} does not exist.");
-                continue;
-            }
-
-            // Check if action is disabled
-            if (isset($actionConfig['enabled']) && !$actionConfig['enabled']) {
-                $formHandle = $submission->form()->handle();
-                Log::info("Action {$actionClass} is disabled for form: {$formHandle}");
                 continue;
             }
 
@@ -190,6 +183,57 @@ class FormProcessorService
 
         // Return just the configs
         return array_map(fn($item) => $item['config'], $actionsWithPriority);
+    }
+
+    protected function filterActionsForEmailConfig(array $actions, array $emailConfig): array
+    {
+        // Check if kreatif_send_mail_actions field exists in this email configuration
+        $kreatifActions = $emailConfig['kreatif_send_mail_actions'] ?? [];
+
+        // If no kreatif_send_mail_actions specified, return all actions (backward compatible)
+        if (empty($kreatifActions)) {
+            return $actions;
+        }
+
+        // Filter actions to only include those enabled for this email config
+        $filteredActions = array_merge($actions, $kreatifActions);
+        // Merge per-email action configuration with addon config
+        /**
+         * @var class-string<FormActionInterface> $actionClass
+         */
+        foreach ($filteredActions as $idx => $actionClass) {
+            $configData = [];
+            if (is_array($actionClass)) {
+                $configData = $actionClass;
+                $actionClass = $idx;
+                if (isset($configData['enabled']) && !$configData['enabled']) {
+                    // Remove disabled action
+                    unset($filteredActions[$actionClass]);
+                    continue;
+                }
+            }
+            // Check if this action has per-email configuration
+            $actionHandle = str_replace('\\', '_', $actionClass);
+            $perEmailActionConfig = [];
+            // Extract all fields that belong to this action
+            // Fields are stored as: Kreatif_StatamicForms_Actions_SendAutoresponderAction_subject
+            foreach ($emailConfig as $key => $value) {
+                if (str_starts_with($key, $actionHandle . '_')) {
+                    $fieldName = substr($key, strlen($actionHandle) + 1);
+                    $perEmailActionConfig[$fieldName] = $actionClass::parseConfigFieldValue($fieldName, $value, $emailConfig);
+                }
+            }
+            if (!empty($perEmailActionConfig)) {
+                // Merge with existing action config if present
+                $existingConfig = $actions[$actionClass] ?? [];
+                $mergedConfig = array_merge($existingConfig, $perEmailActionConfig, $configData);
+                $filteredActions[$actionClass] = $mergedConfig;
+            } else {
+                // Use existing config if no per-email config
+                $filteredActions[$actionClass] = $actions[$actionClass] ?? [];
+            }
+        }
+        return $filteredActions;
     }
 
     protected function checkRateLimit(Submission $submission, string $formHandle): bool
