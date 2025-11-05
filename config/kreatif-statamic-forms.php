@@ -39,7 +39,9 @@ return [
         'organization_name' => env('FORM_EMAIL_ORG_NAME', config('app.name')),
         'sanitize_content' => true, // Sanitize email content to prevent XSS
         'exclude_fields' => ['form', 'site', 'privacy', 'consent'],
-        'css' => 'vite:resources/css/site.css', // 'css:.cid{}, .cid2{}', or 'url:https://exampe.com/assets/sites.css', 'vite:resources/css/site.css'
+        'css' => 'vite:resources/css/site.css', // 'css:.cid{}, .cid2{}', or 'url:https://exampe.com/assets/sites.css', 'vite:resources/css/site.css',
+        'translations_prefix_key' => ['labels.form.values.'], // specify translation keys prefix, so that form field values can be translated
+        'translation_fallback_handle' => \Kreatif\StatamicForms\Actions\TranslationValueFallback::class
     ],
 
     'actions' => [

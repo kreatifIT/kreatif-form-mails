@@ -98,6 +98,8 @@ abstract class BaseMailable extends Mailable
         $fields = $this->removeKeysFromArray($fields, config('kreatif-statamic-forms.email.exclude_fields', []));;
         $fields = $this->removeKeysFromArray($fields, $this->mailConfig['exclude_fields'] ?? []);;
 
+        // Map field values to their labels from blueprint options
+        $fields = $this->mapFieldValuesToLabels($fields);
         if ($data && is_array($data)) {
             $data = array_merge($data, ["fields" => $fields]);
         } else {
@@ -120,6 +122,117 @@ abstract class BaseMailable extends Mailable
             unset($array[$key]);
         }
         return $array;
+    }
+
+    /**
+     * Map field values to their labels from blueprint options.
+     * Handles checkboxes, radio buttons, select, and multiselect fields.
+     */
+    protected function mapFieldValuesToLabels(array $fields): array
+    {
+        $blueprintFields = $this->statamicMailSubmission->form()->blueprint()->fields()->all();
+        $mapped = [];
+
+        foreach ($fields as $fieldHandle => $fieldValue) { // Find the corresponding blueprint field
+            $blueprintField = $blueprintFields->get($fieldHandle);
+
+            if (!$blueprintField) {
+                $mapped[$fieldHandle] = $fieldValue;
+                continue;
+            }
+
+            // Get field type and options
+            $fieldType = (string) $blueprintField->type();
+            $fieldOptions = $blueprintField->config()['options'] ?? null;
+
+            // Only process fields with options (checkboxes, radio, select, multiselect)
+            if (!$fieldOptions || !in_array($fieldType, ['checkboxes', 'radio', 'select', 'button_group'])) {
+                $mapped[$fieldHandle] = $fieldValue;
+                continue;
+            }
+
+            $optionsMap = $this->buildOptionsMap($fieldOptions);
+            if (is_array($fieldValue)) {
+                // Handle multiple values (checkboxes, multiselect)
+                $mapped[$fieldHandle] = array_map(function ($value) use ($optionsMap) {
+                    return $this->translateValue($value, $optionsMap[$value] ?? $value);
+                }, $fieldValue);
+            } else { // Handle single value (radio, select, button_group)
+                $mapped[$fieldHandle] = $this->translateValue($fieldHandle, $optionsMap[$fieldValue] ?? $fieldValue);
+            }
+        }
+
+        return $mapped;
+    }
+
+    /**
+     * Build a map of option keys to their labels/values.
+     */
+    protected function buildOptionsMap($options): array
+    {
+        $map = [];
+
+        foreach ($options as $option) {
+            if (is_array($option)) {
+                // Options defined as ['key' => 'foo', 'value' => 'Foo Label']
+                $key = $option['key'] ?? null;
+                $value = $option['value'] ?? $option['label'] ?? $key;
+                if ($key !== null) {
+                    $map[$key] = $value;
+                }
+            } elseif (is_string($option)) {
+                // Simple string options
+                $map[$option] = $option;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Translate a value if it uses the ###key### pattern or is a translation key.
+     */
+    protected function translateValue($key, $value): string
+    {
+        if (!is_string($key)) {
+            return (string) $keygit ;
+        }
+
+        $prefixes = config('kreatif-statamic-forms.email.translations_prefix_key', []);
+
+        // Try common prefixes
+        foreach ($prefixes as $prefix) {
+            $translated = __($prefix . $key);
+            if ($translated !== $prefix . $key) {
+                return $translated;
+            }
+            if (is_array($value)) {
+                foreach ($value as $subValue) {
+                    if (is_string($subValue)) {
+                        $translated = __($prefix . $subValue);
+                        if ($translated !== $prefix . $subValue) {
+                            return $translated;
+                        }
+                    }
+                }
+            } elseif(is_string($value)) {
+                $translated = __($prefix . $value);
+                if ($translated !== $prefix . $value) {
+                    return $translated;
+                }
+            }
+        }
+
+        $fallbackHandler = config('kreatif-statamic-forms.email.translation_fallback_handle', null);
+        if ($fallbackHandler && class_exists($fallbackHandler)) {
+            /** @var \Kreatif\StatamicForms\Actions\TranslationValueFallback::class $fallbackHandler */
+            $translationKey = $fallbackHandler::handle($key, $value, $this->statamicMailSubmission);
+            $translated = __($translationKey);
+            if ($translated !== $translationKey) {
+                return $translated;
+            }
+        }
+        return $value;
     }
 
     /**
@@ -226,14 +339,13 @@ abstract class BaseMailable extends Mailable
         $allowed = $this->mailConfig['attach_fields'] ?? null;
         $allowed = is_null($allowed) ? null : array_map('strval', Arr::wrap($allowed));
 
+        // Separate exclude list for attachments (different from exclude_fields which is for email body content)
+        $excludeAttachments = $this->mailConfig['exclude_attachments'] ?? [];
 
         /** @var \Statamic\Fields\Field[] $fields */
         $fields = $this->statamicMailSubmission->form()->blueprint()->fields()->all();
         $requestInFiles = request()->allFiles();
 
-        // Separate exclude list for attachments (different from exclude_fields
-        // which is for email body content)
-        $excludeAttachments = $this->mailConfig['exclude_attachments'] ?? [];
         foreach ($fields as $field) {
             $handle = (string) $field->handle();
 
@@ -242,6 +354,7 @@ abstract class BaseMailable extends Mailable
                 continue;
             }
 
+            // If attach_fields is specified, only attach those fields
             if ($allowed && !in_array($handle, $allowed, true)) {
                 continue;
             }
