@@ -195,7 +195,7 @@ abstract class BaseMailable extends Mailable
     protected function translateValue($key, $value): string
     {
         if (!is_string($key)) {
-            return (string) $keygit ;
+            return (string) $key ;
         }
 
         $prefixes = config('kreatif-statamic-forms.email.translations_prefix_key', []);
