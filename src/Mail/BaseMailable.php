@@ -195,7 +195,7 @@ abstract class BaseMailable extends Mailable
     protected function translateValue($key, $value): string
     {
         if (!is_string($key)) {
-            return (string) $key ;
+            return $this->stringifyTranslatedValue($key);
         }
 
         $prefixes = config('kreatif-statamic-forms.email.translations_prefix_key', []);
@@ -227,12 +227,36 @@ abstract class BaseMailable extends Mailable
         if ($fallbackHandler && class_exists($fallbackHandler)) {
             /** @var \Kreatif\StatamicForms\Actions\TranslationValueFallback::class $fallbackHandler */
             $translationKey = $fallbackHandler::handle($key, $value, $this->statamicMailSubmission);
-            $translated = __($translationKey);
-            if ($translated !== $translationKey) {
-                return $translated;
+            if (is_string($translationKey) && $translationKey !== '') {
+                $translated = __($translationKey);
+                if ($translated !== $translationKey) {
+                    return $translated;
+                }
             }
         }
-        return $value;
+
+        return $this->stringifyTranslatedValue($value);
+    }
+
+    protected function stringifyTranslatedValue(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_array($value)) {
+            return implode(', ', array_map(fn ($item) => $this->stringifyTranslatedValue($item), $value));
+        }
+
+        if (is_object($value) && !$value instanceof \Stringable) {
+            return '';
+        }
+
+        return (string) $value;
     }
 
     /**
