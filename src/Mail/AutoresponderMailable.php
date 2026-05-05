@@ -47,7 +47,11 @@ class AutoresponderMailable extends BaseMailable
 
     protected function addReplyTo(): self
     {
-        // Autoresponder typically does not need a reply-to address
+        $replyTo = $this->mailConfig['replyTo'] ?? $this->mailConfig['reply_to'] ?? null;
+        if (!empty($replyTo)) {
+            $this->replyTo($this->parseRecipients($replyTo));
+        }
+
         return $this;
     }
 
@@ -65,6 +69,8 @@ class AutoresponderMailable extends BaseMailable
             $recipients = $this->parseRecipients($from);
             $this->from($recipients);
         }
+
+        $this->addReplyTo();
 
         // Autoresponder should only go to the submitter
         // Do NOT add CC or BCC etc to autoresponder emails

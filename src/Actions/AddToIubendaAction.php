@@ -42,6 +42,8 @@ class AddToIubendaAction extends BaseAction
         }
 
         $email = $submission->get($emailHandle);
+        $preferences = $this->resolveConsentConfig($config['preferences'] ?? [], $submission);
+        $legalNotices = $this->resolveConsentConfig($legalNotices, $submission);
 
         if (!$email) {
             return ActionResult::failure(
@@ -51,10 +53,10 @@ class AddToIubendaAction extends BaseAction
         }
 
         $response = (new IubendaDataConsentService)
-            ->setFirstname($firstName)
+            ->setFirstname((string) $firstName)
             ->setLastname($lastName)
-            ->setEmail($email)
-            ->setPreferences($config['preferences'] ?? [])
+            ->setEmail((string) $email)
+            ->setPreferences($preferences)
             ->setLegalNotices($legalNotices)
             ->createConsent();
 
@@ -82,6 +84,80 @@ class AddToIubendaAction extends BaseAction
     public static function isPreviewable(): bool
     {
         return false;
+    }
+
+    protected function resolveConsentConfig(array $values, Submission $submission): array
+    {
+        foreach ($values as $key => $value) {
+            $values[$key] = $this->resolveConsentValue($value, $submission);
+        }
+
+        return $values;
+    }
+
+    protected function resolveConsentValue(mixed $value, Submission $submission): mixed
+    {
+        if (is_array($value)) {
+            if (array_key_exists('field', $value)) {
+                $fieldValue = $this->getSubmissionFieldValue($submission, $value['field']);
+
+                if ($fieldValue === null && array_key_exists('default', $value)) {
+                    return $this->normalizeConsentBoolean($value['default']);
+                }
+
+                return $this->normalizeConsentBoolean($fieldValue);
+            }
+
+            return $this->resolveConsentConfig($value, $submission);
+        }
+
+        if (is_string($value)) {
+            $fieldValue = $this->getSubmissionFieldValue($submission, $value);
+
+            if ($fieldValue !== null) {
+                return $this->normalizeConsentBoolean($fieldValue);
+            }
+
+            $booleanValue = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+
+            return $booleanValue ?? $value;
+        }
+
+        return $value;
+    }
+
+    protected function getSubmissionFieldValue(Submission $submission, ?string $fieldHandle): mixed
+    {
+        if (!$fieldHandle) {
+            return null;
+        }
+
+        if (!array_key_exists($fieldHandle, $submission->data()->all())) {
+            return null;
+        }
+
+        return $submission->get($fieldHandle);
+    }
+
+    protected function normalizeConsentBoolean(mixed $value): bool
+    {
+        if (is_array($value)) {
+            return !empty(array_filter($value));
+        }
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (bool) $value;
+        }
+
+        if (is_string($value)) {
+            return filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? trim($value) !== '';
+        }
+
+        return !empty($value);
     }
 
     public static function configFields(): array

@@ -15,6 +15,8 @@ return [
         "section_instructions" => "Configure the settings for this action",
         "subject" => "Email Subject",
         "subject_instructions" => "Email subject line. Use 'translate:key' for translations or {{ variables }} for dynamic values.",
+        "reply_to" => "Reply-To Address",
+        "reply_to_instructions" => "Optional address used when the recipient replies to the autoresponder email.",
         "html_template" => "HTML Template",
         "html_template_instructions" => "Path to the HTML email template view (e.g., kreatif-forms::html.emails.autoresponder)",
         "exclude_fields" => "Exclude Fields",

@@ -16,6 +16,8 @@ return [
         "section_instructions" => "Konfigurieren Sie die Einstellungen für diese Aktion",
         "subject" => "E-Mail-Betreff",
         "subject_instructions" => "E-Mail-Betreffzeile. Verwenden Sie 'translate:key' für Übersetzungen.",
+        "reply_to" => "Reply-To-Adresse",
+        "reply_to_instructions" => "Optionale Adresse, die verwendet wird, wenn der Empfänger auf die Autoresponder-E-Mail antwortet.",
         "html_template" => "HTML Template",
         "html_template_instructions" => "Pfad zur HTML-E-Mail-Vorlagenansicht (z. B. kreatif-forms::html.emails.autoresponder)",
         "exclude_fields" => "Felder ausschließen",

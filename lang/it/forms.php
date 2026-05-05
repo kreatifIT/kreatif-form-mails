@@ -14,6 +14,8 @@ return [
         'section_instructions' => 'Configura le impostazioni per questa azione e-mail amministrativa.',
         'subject' => 'Oggetto',
         'subject_instructions' => 'Oggetto dell\'e-mail di notifica amministrativa. i.e labels.mails.formx.subject',
+        'reply_to' => 'Indirizzo Reply-To',
+        'reply_to_instructions' => 'Indirizzo opzionale usato quando il destinatario risponde alla risposta automatica.',
         'exclude_fields' => 'Escludi campi (handles)',
         'exclude_fields_instructions' => 'Elenco separato da virgole di handle dei campi del modulo da escludere dall\'e-mail di notifica amministrativa.',
         'html_template' => 'Modello HTML personalizzato',

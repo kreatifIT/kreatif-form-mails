@@ -73,6 +73,14 @@ class SendAutoresponderAction extends BaseAction
                 "width" => 33,
             ],
             [
+                "handle" => "reply_to",
+                "display" => __("kreatif-forms::forms.action_config.reply_to"),
+                "type" => "text",
+                "instructions" => __("kreatif-forms::forms.action_config.reply_to_instructions"),
+                "placeholder" => "support@example.com",
+                "width" => 33,
+            ],
+            [
                 "handle" => "html",
                 "display" => __("kreatif-forms::forms.action_config.html_template"),
                 "type" => "text",

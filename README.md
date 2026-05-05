@@ -257,6 +257,7 @@ use Kreatif\StatamicForms\Actions\SendAutoresponderAction;
 SendAutoresponderAction::class => [
 'enabled' => true,
 'from'    => 'support@yourdomain.com',
+'reply_to'=> 'support@yourdomain.com', // Optional. If omitted, no Reply-To header is added.
 'subject' => 'Thanks for your message!',
 // Optionally specify a custom template
 'html'    => 'kreatif-forms::html.emails.special-autoresponder',
@@ -271,7 +272,14 @@ use Kreatif\StatamicForms\Actions\AddToIubendaAction;
 
 AddToIubendaAction::class => [
     'enabled' => true,
-    'preferences' => ['newsletter' => true],
+    'preferences' => [
+        'newsletter' => 'newsletter', // Reads the submitted newsletter field
+        'marketing' => ['field' => 'marketing_consent', 'default' => false],
+    ],
+    'legal_notices' => [
+        'privacy_policy' => 'privacy', // Reads the submitted privacy checkbox
+        'cookie_policy' => true,       // Fixed config values still work
+    ],
     'field_mapping' => [
         // Iubenda API Key => Your Form Field Handle
         'first_name' => 'vorname',
@@ -280,6 +288,8 @@ AddToIubendaAction::class => [
     ],
 ],
 ```
+
+Consent values can be fixed booleans (`true`/`false`), a form field handle (`'newsletter' => 'newsletter'`), or an explicit field config with a fallback (`'marketing' => ['field' => 'marketing_consent', 'default' => false]`). Submitted checkbox values like `true`, `1`, `yes`, `on`, or any non-empty selected array are treated as consent given.
 
 Advanced Mapping Tip: If your form only has a single `name` field, you can map it like this. The addon will automatically split it into a first and last name.
 
@@ -529,5 +539,3 @@ You can install this addon via Composer:
 ``` bash
 composer require kreatif/forms
 ```
-
-

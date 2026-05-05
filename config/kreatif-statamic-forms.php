@@ -128,6 +128,7 @@ return [
                 SendAutoresponderAction::class => [
                     'enabled' => true,
                     'subject' => 'Thanks for your message!',
+                    // 'reply_to' => 'support@example.com',
                     // 'email_field' => 'email', // Field name containing user's email
                     // 'template_type' => 'html', // 'html', 'markdown', or 'text'
                     // 'html' => 'kreatif-forms::html.emails.autoresponder',
@@ -136,7 +137,10 @@ return [
 
                 AddToIubendaAction::class => [
                     'enabled' => env('IUBENDA_CONSENT_DB_ENABLED', false),
-                    'preferences' => ['newsletter' => false],
+                    'preferences' => [
+                        'newsletter' => 'newsletter', // fixed bool or form field handle
+                        // 'marketing' => ['field' => 'marketing_consent', 'default' => false], // explicit
+                    ],
                     'field_mapping' => [
                         'first_name' => 'firstname', // Iubenda Key => Form Field Handle
                         'last_name'  => 'lastname',
@@ -149,7 +153,7 @@ return [
                     //     'email'      => 'email',
                     // ],
                     // if custom legal notices are used, map the fields accordingly:
-                    // 'legal_notices' => ['privacy' => true, 'tos' => false, 'marketing' => false, 'privacy_link' => 'www.example.com/privacy'],
+                    // 'legal_notices' => ['privacy_policy' => 'privacy', 'terms' => 'terms', 'privacy_link' => 'www.example.com/privacy'],
                 ],
             ],
         ],
@@ -162,9 +166,9 @@ return [
                     'enabled' => env('IUBENDA_CONSENT_DB_ENABLED', false),
                     'legal_notices' => [
                         // Submitting a form, add consents that user has agreed to. Must be saved in Consent DB according to a Law
-                        'privacy_policy' => true,
+                        'privacy_policy' => 'privacy',
                         'cookie_policy' => true,
-                        'custom_terms_of_service' => true,
+                        'custom_terms_of_service' => 'terms',
                     ],
                 ],
                 //
